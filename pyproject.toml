@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "house-price"
+version = "0.1.0"
+description = "House price scraper"
+authors = ["Joon Kang <denim.bluu@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+bs4 = "^0.0.2"
+pytest-playwright = "^0.4.4"
+playwright = "^1.41.2"
+pydantic = "^2.6.2"
+minio = "^7.2.4"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.2.2"
+mypy = "^1.8.0"
+ptpython = "^3.0.26"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,12 +1,11 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class Property(BaseModel):
     id: str
     listing_title: str = ""
     description: str = ""
-    listed_date: datetime | None = None
+    listed_date: str = ""
     address: str = ""
     price: int = 0
     bedrooms: int = 0

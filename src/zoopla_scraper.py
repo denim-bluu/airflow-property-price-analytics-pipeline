@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright, Playwright, Page
+from playwright.sync_api import Playwright, Page
 
 from bs4 import BeautifulSoup
 import re
@@ -37,7 +37,7 @@ def run_zoopla_scraper(playwright: Playwright) -> list[Property]:
 
         meta_data = {}
         for pr in regular_listings:
-            meta_data["id"] = Property(id=pr.attrs["id"])
+            meta_data["id"] = pr.attrs["id"]
 
             address = pr.find_all("address", {"class": "m6hnz62 _194zg6t9"})
             if len(address) != 1:
@@ -47,7 +47,9 @@ def run_zoopla_scraper(playwright: Playwright) -> list[Property]:
             listed_date = pr.find_all("li", {"class": "jlg7241"})
             if len(listed_date) != 1:
                 raise ValueError("Invalid number of dates found")
-            meta_data["listed_date"] = parse_date(listed_date[0].get_text())
+            meta_data["listed_date"] = parse_date(listed_date[0].get_text()).strftime(
+                "%Y-%m-%d"
+            )
 
             description = pr.find_all("p", {"class": "m6hnz63 _194zg6t9"})
             if len(description) != 1:
@@ -87,18 +89,5 @@ def run_zoopla_scraper(playwright: Playwright) -> list[Property]:
                     meta_data["livingrooms"] = nums
 
             all_properties.append(Property(**meta_data))
-
         browser.close()
-    print(all_properties)
     return all_properties
-
-
-if __name__ == "__main__":
-
-    def main():
-        with sync_playwright() as playwright:
-            all_properties = run_zoopla_scraper(playwright)
-        return all_properties
-
-    all_properties = main()
-    breakpoint()

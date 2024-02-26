@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Install poetry via pip
+pip install poetry
+
+# Install dependencies
+poetry install
+
+# Install playwright and its dependencies
+poetry run playwright install
+poetry run playwright install-deps

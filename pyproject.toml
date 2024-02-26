@@ -16,6 +16,7 @@ boto3 = "^1.34.49"
 delta-spark = "^3.1.0"
 dagster = "^1.6.6"
 dagster-webserver = "^1.6.6"
+pandas = "^2.2.1"
 
 
 [tool.poetry.group.dev.dependencies]

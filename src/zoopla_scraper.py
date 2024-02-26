@@ -1,10 +1,11 @@
-from playwright.sync_api import Playwright, Page
+import re
 
 from bs4 import BeautifulSoup
-import re
-from util.parser import parse_date
+from playwright.sync_api import Page, sync_playwright
+
 from src.data_struct import Property
 from util.browser_support import go_to_page_wrapper, open_browser
+from util.parser import parse_date
 
 
 def find_max_pages(page: Page) -> int:
@@ -13,7 +14,10 @@ def find_max_pages(page: Page) -> int:
     return len(soup.find_all("li", {"class": "_14xj7k74"}))
 
 
-def run_zoopla_scraper(playwright: Playwright) -> list[Property]:
+def run_zoopla_scraper() -> list[Property]:
+    """Orchestrates scraping, validation, and Delta Lake interaction."""
+    playwright = sync_playwright().start()
+
     url = "https://www.zoopla.co.uk/for-sale/property/welwyn-garden-city/?beds_max=3&beds_min=2&q=Welwyn%20Garden%20City%2C%20Hertfordshire&results_sort=newest_listings&search_source=for-sale"
     browser, page = open_browser(playwright)
     go_to_page_wrapper(page, url)
@@ -90,4 +94,5 @@ def run_zoopla_scraper(playwright: Playwright) -> list[Property]:
 
             all_properties.append(Property(**meta_data))
         browser.close()
+    playwright.stop()
     return all_properties

@@ -1,4 +1,6 @@
+import json
 import re
+from typing import Any
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import Page, sync_playwright
@@ -14,7 +16,7 @@ def find_max_pages(page: Page) -> int:
     return len(soup.find_all("li", {"class": "_14xj7k74"}))
 
 
-def run_zoopla_scraper() -> list[Property]:
+def run_zoopla_scraper(run_date: str):
     """Orchestrates scraping, validation, and Delta Lake interaction."""
     playwright = sync_playwright().start()
 
@@ -95,4 +97,8 @@ def run_zoopla_scraper() -> list[Property]:
             all_properties.append(Property(**meta_data))
         browser.close()
     playwright.stop()
-    return all_properties
+
+    data: Any = [model.model_dump() for model in all_properties]
+
+    with open(f"data/scraped_output_{run_date}.json", "w") as f:
+        json.dump(data, f)

@@ -9,6 +9,7 @@ from pathlib import Path
 from src.export_s3 import export_to_s3
 from datetime import datetime
 from src.zoopla_scraper import run_zoopla_scraper
+import os
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,10 +26,8 @@ def create_spark_session():
         )
         .config("spark.databricks.delta.retentionDurationCheck.enabled", "false")
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
-        .config("spark.hadoop.fs.s3a.access.key", "AKIAZLTHZXNJH4NSKI6B")  # type: ignore
-        .config(
-            "spark.hadoop.fs.s3a.secret.key", "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"
-        )  # type: ignore
+        .config("spark.hadoop.fs.s3a.access.key", os.getenv("AWSAWS_ACCESS_KEY_ID"))  # type: ignore
+        .config("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY"))  # type: ignore
         .config(
             "spark.sql.shuffle.partitions", "4"
         )  # default is 200 partitions which is too many for local

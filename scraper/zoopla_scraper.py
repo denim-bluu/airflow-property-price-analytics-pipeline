@@ -5,8 +5,10 @@ from typing import Any
 from bs4 import BeautifulSoup
 from playwright.sync_api import Page, sync_playwright
 
-from src.data_struct import Property
-from util.browser_support import go_to_page_wrapper, open_browser
+from scraper.data_model import Property
+from util import const
+from resources.s3 import export_to_s3
+from scraper.browser_support import go_to_page_wrapper, open_browser
 from util.parser import parse_date
 
 
@@ -100,5 +102,8 @@ def run_zoopla_scraper(run_date: str):
 
     data: Any = [model.model_dump() for model in all_properties]
 
-    with open(f"data/scraped_output_{run_date}.json", "w") as f:
-        json.dump(data, f)
+    export_to_s3(
+        json.dumps(data),
+        const.AWS_S3_BUCKET,
+        f"{const.JSON_DATA_DIR.format(run_date=run_date)}",
+    )

@@ -200,3 +200,5 @@ data/output/_delta_log/.00000000000000000002.json.crc
 data/output/_delta_log/00000000000000000000.json
 data/output/_delta_log/00000000000000000001.json
 data/output/_delta_log/00000000000000000002.json
+HousePriceTracker.pem
+HousePriceTracker.pem:Zone.Identifier

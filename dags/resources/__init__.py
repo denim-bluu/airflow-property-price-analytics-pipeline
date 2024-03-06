@@ -1,8 +1,10 @@
 import boto3
-from dotenv import load_dotenv
 import os
 
+from dotenv import load_dotenv
+
 load_dotenv()
+
 S3_CLIENT = boto3.client(
     "s3",
     region_name="eu-west-1",

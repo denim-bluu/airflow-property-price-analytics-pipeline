@@ -2,7 +2,6 @@ import os
 
 from delta import DeltaTable, configure_spark_with_delta_pip
 from delta._typing import ColumnMapping
-from dotenv import load_dotenv
 from pyspark.errors.exceptions.base import AnalysisException
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
@@ -10,7 +9,6 @@ from pyspark.sql import functions as F
 from util import const
 
 # Load environment variables from .env file
-load_dotenv()
 
 
 def create_spark_session() -> SparkSession:

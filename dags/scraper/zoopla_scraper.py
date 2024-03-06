@@ -1,86 +1,126 @@
 import json
 import re
-from typing import Any
+from typing import List, Dict, Any
 
 from bs4 import BeautifulSoup
-from playwright.sync_api import Page, sync_playwright
-
+from bs4.element import Tag
+from selenium import webdriver
 from scraper.data_model import Property
 from util import const
 from resources.s3 import export_to_s3
-from scraper.browser_support import go_to_page_wrapper, open_browser
+import errors
 from util.parser import parse_date
+from selenium.webdriver import FirefoxOptions
+
+opts = FirefoxOptions()
+opts.add_argument("--headless")
 
 
-def find_max_pages(page: Page) -> int:
-    buttons = page.get_by_test_id("pagination").inner_html()
-    soup = BeautifulSoup(buttons, "html.parser")
-    return len(soup.find_all("li", {"class": "_14xj7k74"}))
+def find_element_by_attribute(page_source: str, attribute: str, value: str) -> Tag:
+    """
+    Find an HTML element by its attribute and value.
+
+    Args:
+        page_source (str): The HTML source code of the page.
+        attribute (str): The attribute of the HTML element.
+        value (str): The value of the attribute.
+
+    Returns:
+        Tag: The found HTML element.
+
+    Raises:
+        errors.ElementNotFoundError: If no element is found with the given attribute and value.
+    """
+
+    soup = BeautifulSoup(page_source, "html.parser")
+    element = soup.find(attribute, {"data-testid": value})
+    if not element or not isinstance(element, Tag):
+        raise errors.ElementNotFoundError(f"No element found with {attribute}={value}")
+    return element
 
 
-def run_zoopla_scraper(run_date: str):
-    """Orchestrates scraping, validation, and Delta Lake interaction."""
-    playwright = sync_playwright().start()
+def find_max_pages(page_source: str) -> int:
+    """
+    Find the maximum number of pages in the pagination.
 
-    url = "https://www.zoopla.co.uk/for-sale/property/welwyn-garden-city/?beds_max=3&beds_min=2&q=Welwyn%20Garden%20City%2C%20Hertfordshire&results_sort=newest_listings&search_source=for-sale"
-    browser, page = open_browser(playwright)
-    go_to_page_wrapper(page, url)
+    Args:
+        page_source (str): The HTML source code of the page.
 
-    n_pages = find_max_pages(page)
-    browser.close()
+    Returns:
+        int: The maximum number of pages.
+    """
 
+    pagination = find_element_by_attribute(page_source, "div", "pagination")
+    return len(pagination.find_all("li", {"class": "_14xj7k74"}))
+
+
+def get_listing_html(page_source: str) -> Tag:
+    """
+    Get the HTML of the listings.
+
+    Args:
+        page_source (str): The HTML source code of the page.
+
+    Returns:
+        Tag: The HTML of the listings.
+    """
+    return find_element_by_attribute(page_source, "div", "regular-listings")
+
+
+def scrape_page(url: str) -> List[Property]:
+    """
+    Scrape a page for property listings.
+
+    Args:
+        url (str): The URL of the page to scrape.
+
+    Returns:
+        List[Property]: A list of property listings.
+    """
+    driver = webdriver.Firefox(options=opts)
+    driver.get(url)
+    page_source = driver.page_source
+    driver.close()
+
+    n_pages = find_max_pages(page_source)
     all_properties = []
+
     for i in range(n_pages):
         print(f"Scraping page {i+1} of {n_pages}")
-        browser, page = open_browser(playwright)
-        go_to_page_wrapper(page, url + f"&pn={i+1}")
+        driver = webdriver.Firefox(options=opts)
+        driver.get(url + f"&pn={i+1}")
+        listing_soup = get_listing_html(driver.page_source)
 
-        listing_html = page.get_by_test_id("regular-listings").inner_html()
-        data_soup = BeautifulSoup(listing_html, "html.parser")
+        for pr in listing_soup.find_all("div", {"class": "dkr2t82"}):
+            property_data = {}
 
-        # Class name for each listing
-        regular_listings = data_soup.find_all("div", {"class": "dkr2t82"})
-        if not regular_listings:
-            raise ValueError("No listings found")
+            property_data["id"] = pr.attrs["id"]
+            address = pr.find("address", {"class": "m6hnz62 _194zg6t9"})
+            property_data["address"] = address.get_text() if address else ""
 
-        meta_data = {}
-        for pr in regular_listings:
-            meta_data["id"] = pr.attrs["id"]
-
-            address = pr.find_all("address", {"class": "m6hnz62 _194zg6t9"})
-            if len(address) != 1:
-                raise ValueError("Invalid number of addresses found")
-            meta_data["address"] = address[0].get_text()
-
-            listed_date = pr.find_all("li", {"class": "jlg7241"})
-            if len(listed_date) != 1:
-                raise ValueError("Invalid number of dates found")
-            meta_data["listed_date"] = parse_date(listed_date[0].get_text()).strftime(
-                "%Y-%m-%d"
+            listed_date = pr.find("li", {"class": "jlg7241"})
+            property_data["listed_date"] = (
+                parse_date(listed_date.get_text()).strftime("%Y-%m-%d")
+                if listed_date
+                else ""
             )
 
-            description = pr.find_all("p", {"class": "m6hnz63 _194zg6t9"})
-            if len(description) != 1:
-                raise ValueError("Invalid number of descriptions found")
-            meta_data["description"] = description[0].get_text()
+            description = pr.find("p", {"class": "m6hnz63 _194zg6t9"})
+            property_data["description"] = description.get_text() if description else ""
 
-            listing_title = pr.find_all("h2", {"data-testid": "listing-title"})
-            if len(listing_title) != 1:
-                raise ValueError("Invalid number of descriptions found")
-            meta_data["listing_title"] = listing_title[0].get_text()
+            listing_title = pr.find("h2", {"data-testid": "listing-title"})
+            property_data["listing_title"] = (
+                listing_title.get_text() if listing_title else ""
+            )
 
-            # Class name for each room details
-            price = pr.find_all("p", {"data-testid": "listing-price"})
-            if len(price) != 1:
-                raise ValueError("Invalid number of prices found")
-            meta_data["price"] = int(
-                price[0].get_text().replace("£", "").replace(",", "")
+            price = pr.find("p", {"data-testid": "listing-price"})
+            property_data["price"] = (
+                int(price.get_text().replace("£", "").replace(",", "")) if price else 0
             )
 
             terms = pr.find_all("div", {"class": "jc64990 jc64994 _194zg6tb"})
-            meta_data["terms"] = [i.get_text() for i in terms]
+            property_data["terms"] = [term.get_text() for term in terms]
 
-            # Class name for each room details
             room_details = pr.find_all("li", {"class": "_1wickv1"})
             for detail in room_details:
                 txt = detail.get_text().lower()
@@ -90,17 +130,35 @@ def run_zoopla_scraper(run_date: str):
                 nums = int(nums[0])
 
                 if "bed" in txt:
-                    meta_data["bedrooms"] = nums
-                if "bath" in txt:
-                    meta_data["bathrooms"] = nums
-                if "living" in txt:
-                    meta_data["livingrooms"] = nums
+                    property_data["bedrooms"] = nums
+                elif "bath" in txt:
+                    property_data["bathrooms"] = nums
+                elif "living" in txt:
+                    property_data["livingrooms"] = nums
 
-            all_properties.append(Property(**meta_data))
-        browser.close()
-    playwright.stop()
+            all_properties.append(Property(**property_data))
 
-    data: Any = [model.model_dump() for model in all_properties]
+        driver.close()
+
+    return all_properties
+
+
+def run_zoopla_scraper(run_date: str):
+    """
+    Run the Zoopla scraper.
+
+    Args:
+        run_date (str): The date to run the scraper.
+    """
+    url = "https://www.zoopla.co.uk/for-sale/property/welwyn-garden-city/?beds_max=3&beds_min=2&q=Welwyn%20Garden%20City%2C%20Hertfordshire&results_sort=newest_listings&search_source=for-sale"
+
+    try:
+        all_properties = scrape_page(url)
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return
+
+    data: List[Dict[str, Any]] = [property.model_dump() for property in all_properties]
 
     export_to_s3(
         json.dumps(data),

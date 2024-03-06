@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 bs4 = "^0.0.2"
-playwright = "^1.41.2"
 pydantic = "^2.6.3"
 pyspark = "^3.5.1"
 boto3 = "^1.34.55"
@@ -17,6 +16,9 @@ pandas = "^2.2.1"
 pendulum = "^3.0.0"
 apache-airflow = "^2.8.2"
 python-dotenv = "^1.0.1"
+apache-airflow-providers-amazon = "^8.18.0"
+selenium = "^4.18.1"
+webdriver-manager = "^4.0.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.2.2"

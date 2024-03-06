@@ -28,3 +28,14 @@ def folder_exists_and_not_empty(bucket: str, path: str) -> bool:
         path = path + "/"
     resp = s3.list_objects(Bucket=bucket, Prefix=path, Delimiter="/", MaxKeys=1)
     return "Contents" in resp
+
+
+def check_bucket_exists(bucket: str) -> bool:
+    """Check if a bucket exists."""
+    try:
+        S3_CLIENT.head_bucket(Bucket=bucket)
+        print(f"Bucket {bucket} exists")
+        return True
+    except Exception as e:
+        print(e)
+        return False

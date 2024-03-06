@@ -202,3 +202,7 @@ data/output/_delta_log/00000000000000000001.json
 data/output/_delta_log/00000000000000000002.json
 HousePriceTracker.pem
 HousePriceTracker.pem:Zone.Identifier
+.python-version
+logs/scheduler/latest
+airflow-data/creds/s3
+.python-version

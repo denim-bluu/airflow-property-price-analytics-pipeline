@@ -1,0 +1,18 @@
+configVars:
+  druid_extensions_loadList: '["druid-histogram","druid-datasketches","druid-lookups-cached-global","postgresql-metadata-storage","druid-s3-extensions"]'
+  druid_storage_type: s3
+  druid_storage_bucket: druidlocal
+  druid_storage_baseKey: k8s-minikube/segments
+  druid_s3_accessKey: access123
+  druid_s3_secretKey: secret1234567890
+  AWS_REGION: "eu-west-1"
+  druid_s3_forceGlobalBucketAccessEnabled: "false"
+  druid_storage_disableAcl: "true"
+  druid_indexer_logs_type: s3
+  druid_indexer_logs_s3Bucket: druidlocal
+  druid_indexer_logs_s3Prefix: k8s-minikube/logs
+  druid_indexer_logs_disableAcl: "true"
+  druid_s3_endpoint_signingRegion: "eu-west-1"
+  druid_s3_endpoint_url: "http://minio:9000"
+  druid_s3_protocol: "http"
+  druid_s3_enablePathStyleAccess: "true"

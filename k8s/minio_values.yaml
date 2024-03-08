@@ -1,0 +1,12 @@
+mode: standalone
+replicas: 1
+rootUser: rootuser
+rootPassword: rootpass123
+persistence:
+  size: 50Gi
+  enabled: true
+resources:
+  requests:
+    memory: 512M
+environment:
+  MINIO_SITE_REGION: “eu-west-1”

@@ -58,7 +58,9 @@ def append_delta_table(df: DataFrame):
 def merge_delta_tables(spark: SparkSession, df: DataFrame):
     """Merge a DataFrame with an existing Delta table or create one if it doesn't exist."""
     try:
-        dt = DeltaTable.forPath(spark, const.DELTA_DATA_DIR)
+        dt = DeltaTable.forPath(
+            spark, f"s3a://{const.AWS_S3_BUCKET}/{const.DELTA_DATA_DIR}"
+        )
         print(f"Merging data with Delta table at {const.DELTA_DATA_DIR}")
         merge_condition = "source.id = target.id"
         update_mapping: ColumnMapping = {col: f"source.{col}" for col in df.columns}

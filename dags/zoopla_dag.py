@@ -36,7 +36,7 @@ def zoopla_etl_dag():
     def test_spark_task():
         spark = create_spark_session()
         print(f"Spark version: {spark.version}")
-    
+
     @task()
     def check_env_vars():
         required_env_vars = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
@@ -52,17 +52,18 @@ def zoopla_etl_dag():
             raise ValueError(f"Bucket {const.AWS_S3_BUCKET} does not exist")
 
     @task()
-    def scrape_and_upload_to_s3_task(**kwargs):
+    def scrape_bromley_properties(**kwargs):
         run_date = kwargs["ds"]
-        run_zoopla_scraper(run_date)
+        run_zoopla_scraper(run_date, location="london/bromley")
         print(f"Scraped data for {run_date} and uploaded to S3")
 
     @task()
-    def download_and_process_data_task(**kwargs):
+    def process_bromley_properties(**kwargs):
         run_date = kwargs["ds"]
         spark = create_spark_session()
         json_data = read_json_from_s3(
-            const.AWS_S3_BUCKET, f"{const.JSON_DATA_DIR.format(run_date=run_date)}"
+            const.AWS_S3_BUCKET,
+            const.JSON_DATA_DIR.format(run_date=run_date, location="london/bromley"),
         )
         df = spark.createDataFrame(json_data)
         df = validate_property_data(df)
@@ -71,10 +72,12 @@ def zoopla_etl_dag():
     t0 = test_spark_task()
     t1 = check_env_vars()
     t2 = check_bucket_exists_task()
-    t3 = scrape_and_upload_to_s3_task()
-    t4 = download_and_process_data_task()
+    t3 = scrape_bromley_properties()
+    t4 = process_bromley_properties()
 
-    t0 >> t1 >> t2 >> t3 >> t4
+    t0 >> t1 >> t2
+    t2.set_downstream(t3)
+    t3.set_downstream(t4)
 
 
 zoopla_etl = zoopla_etl_dag()

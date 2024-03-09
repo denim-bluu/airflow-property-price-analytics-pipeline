@@ -11,6 +11,7 @@ from resources.s3 import export_to_s3
 import errors
 from util.parser import parse_date
 from selenium.webdriver import FirefoxOptions
+import urllib.parse
 
 opts = FirefoxOptions()
 opts.add_argument("--headless")
@@ -77,6 +78,7 @@ def scrape_page(url: str) -> List[Property]:
     Returns:
         List[Property]: A list of property listings.
     """
+    #TODO: Need to iterate through tha pages via Next button instead of shown page number.
     driver = webdriver.Firefox(options=opts)
     driver.get(url)
     page_source = driver.page_source
@@ -143,14 +145,18 @@ def scrape_page(url: str) -> List[Property]:
     return all_properties
 
 
-def run_zoopla_scraper(run_date: str):
+def run_zoopla_scraper(run_date: str, location: str):
     """
     Run the Zoopla scraper.
 
     Args:
         run_date (str): The date to run the scraper.
     """
-    url = "https://www.zoopla.co.uk/for-sale/property/welwyn-garden-city/?beds_max=3&beds_min=2&q=Welwyn%20Garden%20City%2C%20Hertfordshire&results_sort=newest_listings&search_source=for-sale"
+    params = {"location": location}
+    url = f"{const.ZOOPLA_BASE_URL} / {urllib.parse.urlencode(params)}"
+    print("#" * 50)
+    print(f"Scraping Zoopla for {location} on {run_date}")
+    print("#" * 50)
 
     try:
         all_properties = scrape_page(url)
@@ -163,5 +169,5 @@ def run_zoopla_scraper(run_date: str):
     export_to_s3(
         json.dumps(data),
         const.AWS_S3_BUCKET,
-        f"{const.JSON_DATA_DIR.format(run_date=run_date)}",
+        f"{const.JSON_DATA_DIR.format(run_date=run_date, location=location)}",
     )

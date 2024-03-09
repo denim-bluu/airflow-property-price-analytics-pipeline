@@ -3,7 +3,7 @@
 ## Project Summary
 
 This is the full data enginerring lifecycle project. The project is to collect the data from the web (e.g. Zoopla), clean the data, and store the data in the database. This processed data will be used for the analysis and visualization. ALl these tasks will be automated using the Airflow. This is a rough sketch of the project.
-![rough sketch](rough_sketch.png)
+![rough sketch](docs/rough_sketch.png)
 
 ## Motivation
 
@@ -31,20 +31,37 @@ I am planning to buy my own home very soon (fingers crossed) but I would like to
 
 ## Tech Stack
 
-### Programming
+### Programming Language
 
 - Python
 
-### Data Storage / Processing
+### Object Storage (Storing Raw / Processed Data)
 
-- AWS S3
-- Apache Spark / Delta Lake
+    - AWS S3
+
+### Data Warehouse (For querying the data)
+
 - Apache Druid (TBD)
+- OR AWS Redshift (TBD)
 
 ### Data Orchestration
 
 - Apache Airflow
 
-### Data Serving
+### Data Analytics
 
 - Apache Superset (TBD)
+
+## How to Run
+
+1. Run Airflow Docker Container
+
+```bash
+make airflow/up
+```
+
+2. Run Apache Druid
+
+```bash
+make druid/up
+```

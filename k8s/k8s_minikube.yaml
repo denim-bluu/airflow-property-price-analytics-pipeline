@@ -3,8 +3,8 @@ configVars:
   druid_storage_type: s3
   druid_storage_bucket: druidlocal
   druid_storage_baseKey: k8s-minikube/segments
-  druid_s3_accessKey: AKIAZLTHZXNJMZK3XHDD
-  druid_s3_secretKey: 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
+  druid_s3_accessKey: ****
+  druid_s3_secretKey: ****
   AWS_REGION: "eu-west-1"
   druid_s3_forceGlobalBucketAccessEnabled: "false"
   druid_storage_disableAcl: "true"

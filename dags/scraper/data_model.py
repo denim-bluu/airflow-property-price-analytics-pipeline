@@ -11,4 +11,4 @@ class Property(BaseModel):
     bedrooms: int = 0
     bathrooms: int = 0
     livingrooms: int = 0
-    terms: list[str] = []
+    terms: str = ""

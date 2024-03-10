@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import configparser
 
 
 def parse_date(date_str: str) -> datetime:
@@ -9,3 +10,9 @@ def parse_date(date_str: str) -> datetime:
     cleaned_date = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", date_part)
 
     return datetime.strptime(cleaned_date, "%d %b %Y")
+
+
+def get_config() -> configparser.ConfigParser:
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    return config

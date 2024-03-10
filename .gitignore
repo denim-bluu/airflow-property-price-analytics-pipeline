@@ -206,3 +206,5 @@ HousePriceTracker.pem:Zone.Identifier
 logs/scheduler/latest
 airflow-data/creds/s3
 .python-version
+k8s/ingestion_spec.json
+k8s/k8s_minikube.yaml

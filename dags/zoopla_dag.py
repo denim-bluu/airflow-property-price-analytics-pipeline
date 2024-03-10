@@ -2,13 +2,12 @@ import pendulum
 
 from airflow.decorators import dag, task
 from scraper.zoopla_scraper import run_zoopla_scraper
-from resources.s3 import read_json_from_s3, check_bucket_exists
+from resources.s3 import read_parquet_from_s3, check_bucket_exists
 from resources.spark import (
     create_spark_session,
-    append_delta_table,
-    validate_property_data,
+    validate_property_data
 )
-from util import const
+import constants
 from datetime import timedelta
 import os
 
@@ -48,8 +47,8 @@ def zoopla_etl_dag():
 
     @task()
     def check_bucket_exists_task():
-        if not check_bucket_exists(const.AWS_S3_BUCKET):
-            raise ValueError(f"Bucket {const.AWS_S3_BUCKET} does not exist")
+        if not check_bucket_exists(constants.AWS_S3_BUCKET):
+            raise ValueError(f"Bucket {constants.AWS_S3_BUCKET} does not exist")
 
     @task()
     def scrape_bromley_properties(**kwargs):
@@ -61,13 +60,12 @@ def zoopla_etl_dag():
     def process_bromley_properties(**kwargs):
         run_date = kwargs["ds"]
         spark = create_spark_session()
-        json_data = read_json_from_s3(
-            const.AWS_S3_BUCKET,
-            const.JSON_DATA_DIR.format(run_date=run_date, location="london/bromley"),
-        )
+        data = read_parquet_from_s3(
+        constants.AWS_S3_BUCKET,
+        f"{constants.RAW_DATA_DIR}/{'_'.join([run_date + location.replace('/','-')])}.parquet",
+    )
         df = spark.createDataFrame(json_data)
         df = validate_property_data(df)
-        append_delta_table(df)
 
     t0 = test_spark_task()
     t1 = check_env_vars()

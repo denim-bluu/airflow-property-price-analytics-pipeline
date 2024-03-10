@@ -1,38 +1,28 @@
-import os
-
-from delta import DeltaTable, configure_spark_with_delta_pip
-from delta._typing import ColumnMapping
-from pyspark.errors.exceptions.base import AnalysisException
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
-
-from util import const
-
-# Load environment variables from .env file
+from util.parser import get_config
 
 
 def create_spark_session() -> SparkSession:
     """Create and configure a Spark session."""
+    config = get_config()
     builder = (
         SparkSession.builder.appName("MyApp")  # type: ignore
-        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .config(
-            "spark.sql.catalog.spark_catalog",
-            "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-        )
-        .config("spark.databricks.delta.retentionDurationCheck.enabled", "false")
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
-        .config("spark.hadoop.fs.s3a.access.key", os.getenv("AWS_ACCESS_KEY_ID"))  # type: ignore
-        .config("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY"))  # type: ignore
         .config(
-            "spark.sql.shuffle.partitions", "4"
-        )  # default is 200 partitions which is too many for local
-        .config("spark.master", "local[*]")
+            "spark.hadoop.fs.s3a.access.key",
+            config.get("AWS_CREDS", "AWS_ACCESS_KEY_ID"),
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            config.get("AWS_CREDS", "AWS_SECRET_ACCESS_KEY"),
+        )
+        .config(
+            "spark.jars.packages",
+            "org.apache.hadoop:hadoop-aws:3.3.2,com.amazonaws:aws-java-sdk-bundle:1.12.115",
+        )
     )
-    my_packages = ["org.apache.hadoop:hadoop-aws:3.3.2"]
-    return configure_spark_with_delta_pip(
-        builder, extra_packages=my_packages
-    ).getOrCreate()
+    return builder.getOrCreate()
 
 
 def validate_property_data(df: DataFrame) -> DataFrame:
@@ -48,29 +38,15 @@ def validate_property_data(df: DataFrame) -> DataFrame:
     )
 
 
-def append_delta_table(df: DataFrame):
-    print(f"Creating new Delta table at {const.DELTA_DATA_DIR}")
-    df.write.format("delta").mode("append").save(
-        f"s3a://{const.AWS_S3_BUCKET}/{const.DELTA_DATA_DIR}"
-    )
+def upsert_to_existing_table(
+    df1: DataFrame, df2: DataFrame, keys: list[str]
+) -> DataFrame:
+    """
+    Upsert the given DataFrame to the existing table.
 
-
-def merge_delta_tables(spark: SparkSession, df: DataFrame):
-    """Merge a DataFrame with an existing Delta table or create one if it doesn't exist."""
-    try:
-        dt = DeltaTable.forPath(
-            spark, f"s3a://{const.AWS_S3_BUCKET}/{const.DELTA_DATA_DIR}"
-        )
-        print(f"Merging data with Delta table at {const.DELTA_DATA_DIR}")
-        merge_condition = "source.id = target.id"
-        update_mapping: ColumnMapping = {col: f"source.{col}" for col in df.columns}
-
-        dt.alias("target").merge(df.alias("source"), merge_condition).whenMatchedUpdate(
-            set=update_mapping
-        ).whenNotMatchedInsertAll().execute()
-
-    except AnalysisException:
-        print(f"Creating new Delta table at {const.DELTA_DATA_DIR}")
-        df.write.format("delta").save(
-            f"s3a://{const.AWS_S3_BUCKET}/{const.DELTA_DATA_DIR}"
-        )
+    Args:
+        df1 (DataFrame): The DataFrame to upsert.
+        df2 (DataFrame): The existing DataFrame.
+        key (list[str]): The key to use for the upsert.
+    """
+    return df1.alias("a").join(df2.alias("b"), keys, how="outer").select("*")

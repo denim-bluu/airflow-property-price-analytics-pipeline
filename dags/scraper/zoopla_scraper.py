@@ -1,23 +1,22 @@
+import json
 import logging
-import os
 import re
 import urllib.parse
-from typing import List
+from typing import List, Dict, Any
 
 import constants
 import errors
-import polars as pl
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from resources.s3 import upload_file_to_s3
+from resources.s3 import upload_data_to_s3
 from scraper.data_model import Property
 from selenium import webdriver
 from selenium.webdriver import FirefoxOptions
-
 from util.parser import parse_date
 
 opts = FirefoxOptions()
 opts.add_argument("--headless")
+opts.add_argument("--no-sandbox")
 
 
 def find_element_by_attribute(page_source: str, attribute: str, value: str) -> Tag:
@@ -162,26 +161,17 @@ def run_zoopla_scraper(run_date: str, location: str):
         "is_retirement_home": "false",
         "is_shared_ownership": "false",
     }
-    url = f"{constants.ZOOPLA_BASE_URL}/{location}/?{urllib.parse.urlencode(params)}"
     logging.info(f"Scraping Zoopla for {location} on {run_date}")
 
     # Scrape the page
-    try:
-        all_properties = scrape_page(url)
-    except Exception as e:
-        logging.error(f"Error occurred: {e}")
-        return
+    url = f"{constants.ZOOPLA_BASE_URL}/{location}/?{urllib.parse.urlencode(params)}"
+    logging.info(f"URL: {url}")
+    all_properties = scrape_page(url)
 
-    # Write the data to a temp file
-    df = pl.DataFrame([x.model_dump() for x in all_properties])
-    df.write_parquet("temp_data.parquet")
+    data: List[Dict[str, Any]] = [property.model_dump() for property in all_properties]
 
-    # Upload the temp file to S3
-    upload_file_to_s3(
-        "temp_data.parquet",
-        constants.AWS_S3_BUCKET,
-        f"{constants.RAW_DATA_DIR}/{'_'.join([run_date + location.replace('/','-')])}.parquet",
+    upload_data_to_s3(
+        json.dumps(data),
+        constants.S3_BUCKET,
+        f"{constants.RAW_DIR}/{'_'.join([run_date + location.replace('/', '-')])}.json",
     )
-
-    # Delete the temp file
-    os.remove("temp_data.parquet")

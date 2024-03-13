@@ -7,16 +7,15 @@ from typing import Any
 import boto3
 import polars as pl
 from botocore.exceptions import ClientError
-from util.parser import get_config
-
+from util.parser import get_yaml_config
 
 def get_s3_client():
-    config = get_config()
+    config = get_yaml_config()
     return boto3.client(
         "s3",
         region_name="eu-west-1",
-        aws_access_key_id=config.get("AWS_CREDS", "AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=config.get("AWS_CREDS", "AWS_SECRET_ACCESS_KEY"),
+        aws_access_key_id=config["AWS"]["ACCESS_KEY_ID"],
+        aws_secret_access_key=config["AWS"]["SECRET_ACCESS_KEY"],
     )
 
 

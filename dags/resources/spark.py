@@ -1,11 +1,13 @@
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
-from util.parser import get_config
+from util.parser import get_yaml_config
+
+# DEPRECATED
 
 
 def create_spark_session() -> SparkSession:
     """Create and configure a Spark session."""
-    config = get_config()
+    config = get_yaml_config()
     builder = (
         SparkSession.builder.appName("MyApp")  # type: ignore
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
@@ -33,8 +35,7 @@ def validate_property_data(df: DataFrame) -> DataFrame:
         & F.col("bedrooms").between(0, 10)
         & F.col("bathrooms").between(0, 10)
         & F.col("livingrooms").between(0, 10)
-        & F.col("address").isNotNull()
-        & F.col("listed_date").isNotNull()
+        & F.col("finger_print").isNotNull()
     )
 
 

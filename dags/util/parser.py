@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
-import configparser
+from typing import Dict
+import yaml
 
 
 def parse_date(date_str: str) -> datetime:
@@ -12,7 +13,5 @@ def parse_date(date_str: str) -> datetime:
     return datetime.strptime(cleaned_date, "%d %b %Y")
 
 
-def get_config() -> configparser.ConfigParser:
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    return config
+def get_yaml_config() -> Dict:
+    return yaml.load(open("config.yaml", "r"), Loader=yaml.SafeLoader)

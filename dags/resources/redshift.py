@@ -5,7 +5,13 @@ from util.parser import get_yaml_config
 
 
 def get_redshift_client():
-    return boto3.client("redshift-data", region_name="eu-west-1")
+    config = get_yaml_config()
+    return boto3.client(
+        "redshift-data",
+        region_name="eu-west-1",
+        aws_access_key_id=config["AWS"]["ACCESS_KEY_ID"],
+        aws_secret_access_key=config["AWS"]["SECRET_ACCESS_KEY"],
+    )
 
 
 def run_redshift_statement(sql_statement: str, max_wait_cycles: int = 5):

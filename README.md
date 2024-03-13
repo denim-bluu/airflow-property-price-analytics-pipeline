@@ -15,19 +15,17 @@ I am planning to buy my own home very soon (fingers crossed) but I would like to
 
 ## Data Engineering Lifecycle
 
-1. Data Ingestion
+1. Data Ingestion / Transformation / Load
     - Collect the data from the web using Python crawler script
-    - Load this JSON data to the S3 bucket (Data lake)
-2. Data Transformation
-    - Clean the data
-    - Convert data as delta table and store the table in S3 bucket
-3. Serving Data
-    - Load the data from the S3 bucket to the OLAP service. (e.g. Redshift)
-        - Ideally, I would like to deploy Apache Druid with kube cluster
+    - Load initially parsed data as parquet format to the S3 bucket
+    - Clean the data and store the data in the S3 bucket
+    - Load the data from the S3 bucket to OLAP service (e.g. Redshift)
+        ![redshift_screenshot](docs/redshift_screenshot.png)
+2. Serving Data
     - Create the dashboard using the BI tool (e.g. Apache Superset)
     - Apply super simple MLs to predict the price of the property
-4. Orchestration / Automate the pipeline
-    - Use Apache Airflow to automate the pipeline
+3. Orchestration / Automate the pipeline
+    - Use Airflow to automate the pipeline
 
 ## Tech Stack
 
@@ -41,16 +39,16 @@ I am planning to buy my own home very soon (fingers crossed) but I would like to
 
 ### Data Warehouse (For querying the data)
 
-- Apache Druid (TBD)
-- OR AWS Redshift (TBD)
+    - AWS Redshift
+    - Apache Druid (Attepted running on the local machine with Kubernetes hit the resource limitation. Will try to run on the AWS EKS.) 
 
 ### Data Orchestration
 
-- Apache Airflow
+    - Apache Airflow
 
 ### Data Analytics
 
-- Apache Superset (TBD)
+    - Apache Superset (TBD)
 
 ## How to Run
 
@@ -60,7 +58,7 @@ I am planning to buy my own home very soon (fingers crossed) but I would like to
 make airflow/up
 ```
 
-2. Run Apache Druid
+2. (Deprecated) Run Apache Druid
 
 ```bash
 make druid/up

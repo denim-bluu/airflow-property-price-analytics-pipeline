@@ -1,9 +1,9 @@
 import json
-import logging
 import re
 import urllib.parse
 from typing import List, Dict, Any
 
+import logging
 import constants
 import errors
 from bs4 import BeautifulSoup
@@ -57,6 +57,25 @@ def find_max_pages(page_source: str) -> int:
     return len(pagination.find_all("li", {"class": "_14xj7k74"}))
 
 
+def next_page_exists(page_source: str) -> bool:
+    """
+    Checks if the next page exists in the given page source.
+
+    Args:
+        page_source (str): The HTML source code of the page.
+
+    Returns:
+        bool: True if the next page exists, False otherwise.
+    """
+    pagination = find_element_by_attribute(page_source, "div", "pagination")
+    next_page = pagination.find("div", {"class": "_14xj7k72"})
+    item = next_page.find("a", {"class": "qimhss0 qimhss3 qimhss9 _194zg6t8"})
+    if item.get("href"):
+        return True
+    else:
+        return False
+
+
 def get_listing_html(page_source: str) -> Tag:
     """
     Get the HTML of the listings.
@@ -81,20 +100,18 @@ def scrape_page(url: str) -> List[Property]:
     Returns:
         List[Property]: A list of property listings.
     """
-    # TODO: Need to iterate through tha pages via Next button instead of shown page number.
-    driver = webdriver.Firefox(options=opts)
-    driver.get(url)
-    page_source = driver.page_source
-    driver.close()
-
-    n_pages = find_max_pages(page_source)
+    go_to_next = True
+    page = 0
     all_properties = []
-
-    for i in range(n_pages):
-        logging.info(f"Scraping page {i+1} of {n_pages}")
+    while go_to_next:
+        page += 1
         driver = webdriver.Firefox(options=opts)
-        driver.get(url + f"&pn={i+1}")
-        listing_soup = get_listing_html(driver.page_source)
+        driver.get(url + f"&pn={page}")
+        logging.info(f"Scraping: {url}&pn={page}")
+        page_source = driver.page_source
+        listing_soup = get_listing_html(page_source)
+        go_to_next = next_page_exists(page_source)
+        driver.close()
 
         for pr in listing_soup.find_all("div", {"class": "dkr2t82"}):
             property_data = {}
@@ -142,9 +159,6 @@ def scrape_page(url: str) -> List[Property]:
                     property_data["livingrooms"] = nums
 
             all_properties.append(Property(**property_data))
-
-        driver.close()
-
     return all_properties
 
 
@@ -164,7 +178,7 @@ def run_zoopla_scraper(run_date: str, location: str):
     logging.info(f"Scraping Zoopla for {location} on {run_date}")
 
     # Scrape the page
-    url = f"{constants.ZOOPLA_BASE_URL}/{location}/?{urllib.parse.urlencode(params)}"
+    url = f"{constants.ZOOPLA_PROP_SALES_URL}/{location}/?{urllib.parse.urlencode(params)}"
     logging.info(f"URL: {url}")
     all_properties = scrape_page(url)
 

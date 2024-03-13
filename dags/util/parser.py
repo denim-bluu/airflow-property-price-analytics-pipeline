@@ -2,6 +2,7 @@ from datetime import datetime
 import re
 from typing import Dict
 import yaml
+from pathlib import Path
 
 
 def parse_date(date_str: str) -> datetime:
@@ -14,4 +15,5 @@ def parse_date(date_str: str) -> datetime:
 
 
 def get_yaml_config() -> Dict:
-    return yaml.load(open("config.yaml", "r"), Loader=yaml.SafeLoader)
+    path = str(Path(__file__).parent.parent / "config.yaml")
+    return yaml.load(open(path, "r"), Loader=yaml.SafeLoader)

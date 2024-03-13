@@ -9,6 +9,7 @@ import polars as pl
 from botocore.exceptions import ClientError
 from util.parser import get_yaml_config
 
+
 def get_s3_client():
     config = get_yaml_config()
     return boto3.client(

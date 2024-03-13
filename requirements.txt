@@ -11,3 +11,4 @@ python-dotenv==1.0.1
 pyarrow==15.0.1
 polars==0.20.15
 redshift-connector==2.1.0
+loguru==0.7.2

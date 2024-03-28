@@ -33,12 +33,26 @@ airflow/up: ## Start airflow
 	docker compose up --build
 
 # ==================================================================================== #
-# Apache Druid / Kubernetes
+# Kubernetes
 # ==================================================================================== #
+
+.PHONY: minikube/start
+minikube/start:
+	minikube start
+
+.PHONY: minikube/create_namespace
+minikube/create_namespace:
+	kubectl create namespace dev
+
+.PHONY: minio/install
+minio/install: ## Install Minio
+	helm repo add minio https://charts.min.io/
+	helm install minio minio/minio --namespace dev -f k8s/minio_values.yaml
+
 .PHONY: druid/install
 druid/install: ## Install Druid
-	helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
-	helm install druid wiremind/druid --namespace dev -f k8s/k8s_minikube.yaml
+	helm repo add druid-helm https://asdf2014.github.io/druid-helm/
+	helm install druid druid-helm/druid --version 29.0.1 --namespace dev -f k8s/k8s_minikube.yaml
 	
 
 .PHONY: druid/uninstall

@@ -1,7 +1,0 @@
-AWS:
-  ACCESS_KEY_ID: ****
-  SECRET_ACCESS_KEY: ****
-  S3_PATH: ****
-  REDSHIFT_IAM_ROLE: ****
-  REDSHIFT_DATABASE: "dev"
-  REDSHIFT_WORKGROUP: "default-workgroup"

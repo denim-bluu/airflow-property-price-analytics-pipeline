@@ -1,0 +1,13 @@
+AWS:
+  S3:
+    ACCESS_KEY_ID: ********
+    SECRET_ACCESS_KEY: ********
+    ENDPPOINT: http://127.0.0.1:9000
+    AWS_REGION: eu-west-1
+    S3_PATH_PROPERTY: s3a://houseprice
+  REDSHIFT:
+    HOST: ********
+    PORT: 5439
+    USER: admin
+    PASSWORD: ********
+    DATABASE: dev
